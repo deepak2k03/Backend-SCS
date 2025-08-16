@@ -1,48 +1,47 @@
 const express = require("express");
 const app = express();
+const path=require("path");
+const userModel = require("./models/user");
+const user = require("./models/user");
 
-const userModel = require("./usermodel");
+app.set("view engine", "ejs");
+app.use(express.json());  
+app.use(express.urlencoded({ extended: true }));  
+app.use(express.static(path.join(__dirname, "public")));
+
 app.get("/", (req, res) => {
-  res.send("Hello, World!");
+  res.render("index");    
 });
 
-//creare user
-app.get("/create", async function (req, res) {
+app.get("/read", async (req, res) => {
+  let user = await userModel.find();
+  res.render("read",{user});    
+});
+
+app.get("/edit/:userid", async (req, res) => {
+  let user = await userModel.findOne({ _id: req.params.userid });
+  res.render("edit",{user});    
+});
+
+app.post("/update/:userid", async (req, res) => {
+  let {name, email, image} = req.body;
+  let user = await userModel.findOneAndUpdate({ _id: req.params.userid },{name, email, image},{new: true  });
+  res.redirect("/read");    
+});
+
+app.get("/delete/:id", async (req, res) => {
+  let user = await userModel.findOneAndDelete({_id: req.params.id});
+  res.redirect("/read");    
+});
+
+app.post("/create", async (req, res) => {
+  let {name, email, image}=req.body;
   let createdUser = await userModel.create({
-    name: "harshchutiya",
-    username: "johndoe",
-    email: "lolopolo@gmail.com",
-  });
-
-  res.send(createdUser);
+    name, 
+    email, 
+    image});
+    res.redirect("/read");
 });
-
-//read all users
-// app.get("/read", async function (req, res) {
-//   let users = await userModel.find();
-//   res.send(users);
-// });
-
-//read one user
-app.get("/read", async function (req, res) {
-  let users = await userModel.find({name: 'harsh'});
-  res.send(users);
-});
-
-
-//update user
-app.get("/update", async function (req, res) {
-  let updatedUser = await userModel.findOneAndUpdate({username: "johndoe"},{name:"bahenkaloda"});
-  res.send(updatedUser);
-});
-
-
-// delete user
-app.get("/delete", async function (req, res) {
-  let deletedUser = await userModel.findOneAndDelete({name: "harsh"});
-  res.send(deletedUser);
-});
-
 
 app.listen(3000, () => {
   console.log("Server is running on http://localhost:3000");
